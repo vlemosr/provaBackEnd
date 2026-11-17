@@ -1,0 +1,39 @@
+Verifica o python: python --version
+
+Cria o ambiente virtual: python -m venv venv
+
+Ativa o ambiente: venv\Scripts\activate
+
+Instalar o Django: pip install django
+
+Congelar dependências: pip freeze > requirements.txt
+
+Criar projeto django: django-admin startproject core .
+
+Criando primeiro app: python manage.py startapp home
+
+Adicionar o "home" no INSTALLED_APPS
+
+Criando primeira view e URL: 
+	no home/views.py adicione:
+		from django.http import HttpResponse 
+
+		def ola_mundo(request): 
+			return HttpResponse("<h1>Olá, Django!</h1>") 
+Crie o arquivo home/urls.py e insira:
+	from django.urls import path 
+	from . import views 
+
+  	urlpatterns = [ 
+		path("", views.ola_mundo, name="ola_mundo"), 
+	] 
+Edite o core/urls colocando:
+	from django.contrib import admin 
+	from django.urls import path, include 
+
+  	urlpatterns = [ 
+		path("admin/", admin.site.urls), 
+		path("", include("home.urls")), 
+	] 
+
+python manage.py createsuperuser 

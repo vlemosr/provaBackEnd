@@ -1,0 +1,124 @@
+Passo 1: Criar o Model
+
+Defina os dados que serão salvos no banco em home/models.py:
+
+from django.db import models
+class Tarefa(models.Model):
+    titulo = models.CharField(max_length=100)
+    def __str__(self):
+        return self.titulo
+
+-----------------------------------------------------------------
+
+Passo 2: Gerar e Aplicar as Migrações
+
+No terminal, crie a tabela no banco de dados SQLite:
+
+python manage.py makemigrations
+python manage.py migrate
+
+----------------------------------------------------------------
+
+Passo 3: Criar as Views (Lógica do CRUD)
+
+Em home/views.py, você precisa de 3 funções básicas:
+
+Listar e Criar (Read + Create)
+Editar (Update)
+Deletar (Delete)
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Tarefa
+# 1. READ & CREATE (Lista todas e recebe novas via POST)
+def listar_tarefas(request):
+    if request.method == "POST":
+        titulo = request.POST.get("titulo")
+        if titulo:
+            Tarefa.objects.create(titulo=titulo)
+        return redirect("listar_tarefas")
+    tarefas = Tarefa.objects.all()
+    return render(request, "home/tarefas.html", {"tarefas": tarefas})
+# 2. UPDATE (Edita uma tarefa existente)
+def editar_tarefa(request, id):
+    tarefa = get_object_or_404(Tarefa, id=id)
+    if request.method == "POST":
+        tarefa.titulo = request.POST.get("titulo")
+        tarefa.save()
+        return redirect("listar_tarefas")
+    return render(request, "home/editar.html", {"tarefa": tarefa})
+# 3. DELETE (Remove uma tarefa)
+def deletar_tarefa(request, id):
+    tarefa = get_object_or_404(Tarefa, id=id)
+    tarefa.delete()
+    return redirect("listar_tarefas")
+
+--------------------------------------------------------------------------
+
+Passo 4: Configurar as Rotas (URLs)
+
+Em home/urls.py, crie os caminhos que recebem o id quando necessário:
+
+python
+from django.urls import path
+from . import views
+urlpatterns = [
+    path('', views.listar_tarefas, name='listar_tarefas'),
+    path('editar/<int:id>/', views.editar_tarefa, name='editar_tarefa'),
+    path('deletar/<int:id>/', views.deletar_tarefa, name='deletar_tarefa'),
+]
+
+----------------------------------------------------------------------------
+
+Passo 5: Criar os Templates HTML
+
+Crie a pasta de templates: home/templates/home/
+
+1. home/templates/home/tarefas.html (Listar + Formulário de Criar)
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Tarefas</title>
+</head>
+<body>
+    <h1>Minhas Tarefas</h1>
+    <!-- FORMULÁRIO DE CRIAÇÃO -->
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="titulo" placeholder="Nova tarefa..." required>
+        <button type="submit">Adicionar</button>
+    </form>
+    <hr>
+    <!-- LISTAGEM COM LINKS DE EDITAR E DELETAR -->
+    <ul>
+        {% for tarefa in tarefas %}
+            <li>
+                {{ tarefa.titulo }}
+                <a href="{% url 'editar_tarefa' tarefa.id %}">[Editar]</a>
+                <a href="{% url 'deletar_tarefa' tarefa.id %}">[Excluir]</a>
+            </li>
+        {% empty %}
+            <li>Nenhuma tarefa cadastrada.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+2. home/templates/home/editar.html (Formulário de Edição)
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Tarefa</title>
+</head>
+<body>
+    <h1>Editar Tarefa</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="titulo" value="{{ tarefa.titulo }}" required>
+        <button type="submit">Salvar</button>
+        <a href="{% url 'listar_tarefas' %}">Cancelar</a>
+    </form>
+</body>
+</html>
